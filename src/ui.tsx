@@ -3,6 +3,9 @@ import {
   Checkbox,
   Columns,
   Container,
+  IconButton,
+  IconChevronDown32,
+  IconChevronRight32,
   IconLayerFrame16,
   IconSpaceHorizontal16,
   Muted,
@@ -28,7 +31,18 @@ function Plugin() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [detach, setDetach] = useState(false)
+
+  const toggleShowAdvanced = (): void => 
+    setShowAdvanced(prev => {
+      const newWidth = !prev ? 275 : undefined ; // Adjust width for scrollbar
+      const newHeight = !prev ? 480 : undefined; // Adjust width for scrollbar
+      parent.postMessage({ pluginMessage: { type: 'RESIZE_UI', width: newWidth, height: newHeight}}, '*');
+      return !prev
+    })
+  
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -80,8 +94,8 @@ function Plugin() {
   );
 
   return (
-    <Container space="small">
-      <VerticalSpace space="extraLarge" />
+    <Container space="small" style={{ overflowX: 'hidden' }}>
+      <VerticalSpace space="extraLarge"/>
       <Stack space="medium">
         <Text>
           1. Select template frame<br />
@@ -131,15 +145,27 @@ function Plugin() {
             />
           </Stack>
         </Columns>
-        <Stack space="extraSmall">
-          <Checkbox
-            onChange={(event) => setDetach(event.currentTarget.checked)} 
-            value={detach}
-          >
-            Detach Instance
-          </Checkbox>
-          <Muted>This will only work on components and instances.</Muted>
-        </Stack>
+
+        <Button
+          onClick={toggleShowAdvanced}
+          secondary
+          size={1}
+          fullWidth
+          icon={showAdvanced ? 'chevron-down' : 'chevron-right'}
+        >
+          {showAdvanced ? 'Hide' : 'Show'} Advanced Options
+        </Button>
+        {showAdvanced && (
+          <Stack space="extraSmall" >
+            <Checkbox
+              onChange={(event) => setDetach(event.currentTarget.checked)} 
+              value={detach}
+            >
+              Detach Instance
+            </Checkbox>
+            <Muted>This will only work on components and instances.</Muted>
+          </Stack>  
+        )}
 
         {errorMessage && <Text>⚠️ {errorMessage}</Text>}
         <Button disabled={isLoading} loading={isLoading} fullWidth onClick={handleGenerateFramesClick}>

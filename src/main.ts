@@ -19,10 +19,20 @@ export default function () {
     figma.closePlugin()
   })
 
+  const originalWidth = 260;
+  const originalHeight = 420;
   showUI({
-    width: 260,
-    height: 420
+    width: originalWidth,
+    height: originalHeight
   })
+
+  figma.ui.onmessage = (message) => {
+    console.log('Received message from UI:', message); // Debugging log
+    if (message.type === 'RESIZE_UI') {
+      const { width = originalWidth, height = originalHeight} = message;
+      figma.ui.resize(width, height); 
+    }
+  };
 }
 
 function delay(time: number): Promise<void> {
