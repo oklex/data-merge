@@ -3,10 +3,10 @@ import { CloseHandler, GenerateFrames } from './types'
 
 export default function () {
   console.log("Plugin main function started");
-  on<GenerateFrames>('GENERATE_FRAMES', async function (csvData: string, framesPerRow: number, gap: number) {
+  on<GenerateFrames>('GENERATE_FRAMES', async function (csvData: string, framesPerRow: number, gap: number, detach: boolean) {
     console.log("GenerateFrames event received", { csvData, framesPerRow, gap });
     try {
-      await generateFrames(csvData, framesPerRow, gap);
+      await generateFrames(csvData, framesPerRow, gap, detach);
       figma.ui.postMessage({ type: 'generation-complete' });
     } catch (error) {
       console.error("Error in generateFrames:", error);
@@ -29,9 +29,10 @@ function delay(time: number): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, time));
 }
 
-async function generateFrames(csvData: string, framesPerRow: number, gap: number) {
+async function generateFrames(csvData: string, framesPerRow: number, gap: number, detach: boolean) {
   console.log("generateFrames called with", { csvData, framesPerRow, gap });
   const nodes: Array<SceneNode> = [];
+  const instancesToDetach: Array<InstanceNode> = []; 
   const selectedFrame = figma.currentPage.selection[0];
   const uniqueFonts = new Set<FontName>();
   console.log("Selected frame:", selectedFrame);
@@ -110,11 +111,22 @@ async function generateFrames(csvData: string, framesPerRow: number, gap: number
       }
       processedItems++;
     };
+    
+    if (detach && selectedFrame.type === 'COMPONENT' && newFrame.type === "INSTANCE")
+      instancesToDetach.push(newFrame as InstanceNode);
   };
 
+  let newFrames = nodes
+  if (detach)  
+    await Promise.all(instancesToDetach.map(async (instance) => 
+      instance.detachInstance()
+    )).then((res) => {
+      newFrames = res.filter(frame => frame !== null) as FrameNode []
+    })
+  
   figma.notify(`🥰 Rendered ${dataLength} frames`);
-  figma.currentPage.selection = nodes;
-  figma.viewport.scrollAndZoomIntoView(nodes);
+  figma.currentPage.selection = newFrames;
+  figma.viewport.scrollAndZoomIntoView(newFrames);
   figma.closePlugin();
 }
 

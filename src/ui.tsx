@@ -1,5 +1,6 @@
 import {
   Button,
+  Checkbox,
   Columns,
   Container,
   IconLayerFrame16,
@@ -27,6 +28,7 @@ function Plugin() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
+  const [detach, setDetach] = useState(false)
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -72,9 +74,9 @@ function Plugin() {
       console.log("set isLoading to true", isLoading);
 
       console.log("Emitting GenerateFrames event", { csvData, framesPerRow, gap });
-      emit<GenerateFrames>('GENERATE_FRAMES', csvData, framesPerRow ||  5, gap || 40);
+      emit<GenerateFrames>('GENERATE_FRAMES', csvData, framesPerRow ||  5, gap || 40, detach || false);
     },
-    [csvData, framesPerRow, gap, isLoading]
+    [csvData, framesPerRow, gap, isLoading, detach]
   );
 
   return (
@@ -129,6 +131,15 @@ function Plugin() {
             />
           </Stack>
         </Columns>
+        <Stack space="extraSmall">
+          <Checkbox
+            onChange={(event) => setDetach(event.currentTarget.checked)} 
+            value={detach}
+          >
+            Detach Instance
+          </Checkbox>
+          <Muted>This will only work on components and instances.</Muted>
+        </Stack>
 
         {errorMessage && <Text>⚠️ {errorMessage}</Text>}
         <Button disabled={isLoading} loading={isLoading} fullWidth onClick={handleGenerateFramesClick}>
